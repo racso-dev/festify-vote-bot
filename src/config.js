@@ -3,8 +3,7 @@ import { hideBin } from 'yargs/helpers';
 
 export let config = {
   url: '',
-  song: '',
-  votes: 1,
+  capacity: 1,
   stealth: false,
   debug: false,
   headless: false,
@@ -16,6 +15,8 @@ export let config = {
     appShell: '',
     like: '',
     currentSong: '',
+    progressBar: '',
+    progressBarFrame: ''
   },
 };
 
@@ -26,16 +27,12 @@ export const loadConfig = (args) => {
       alias: 'u',
       type: 'string',
       demandOption: true,
-    })  
-    .option('song', {
-      alias: 't',
-      type: 'string',
-      demandOption: true,
     })
-    .option('votes', {
-      alias: 'v',
+    .option('capacity', {
+      alias: 'c',
       type: 'number',
       demandOption: true,
+      default: 1,
     })
     .option('stealth', {
       alias: 's',
@@ -55,19 +52,17 @@ export const loadConfig = (args) => {
     .option('timeOut').argv;
 
   const {
-    url: url,
-    song: song,
-    votes: votes,
-    stealth: stealth,
-    debug: debug,
-    headless: headless,
-    timeOut: timeOut,
+    url,
+    capacity,
+    stealth,
+    debug,
+    headless,
+    timeOut,
   } = argv;
 
   config = {
     url,
-    song,
-    votes,
+    capacity,
     stealth,
     debug,
     headless,

@@ -51,30 +51,40 @@ export const findAllElementsInShadowRoot = async ({ page, elementHandle, selecto
   );
 };
 
-export const likeSong = async (page, shadowHost, song, songsList) => {
-  // Parcourir les titres de chanson et voter pour la chanson demandée
-  console.log('Song', song, songsList);
-  for (const title of songsList) {
-    debugLogs('Songs list', songsList, 'Song', song);
+export const getDurationsOfCurrentSong = async (page, shadowHost) => {
+  const progressBarFrame = await findElementInShadowRoot({
+    page,
+    elementHandle: shadowHost,
+    selector: config.selectors.progressBarFrame,
+  });
+  const progressBar = await findElementInShadowRoot({
+    page,
+    elementHandle: shadowHost,
+    selector: config.selectors.progressBar,
+  });
 
-    if (title.includes(song)) {
-      debugLogs('Song found', true, 'Song title', title);
-      // Find the song in the shadow DOM and vote for it
-      const likeSongElement = await findElementInShadowRoot({
-        page,
-        elementHandle: shadowHost,
-        selector: config.selectors.song(title),
-      });
-      debugLogs('Like song element handle', likeSongElement);
-      // const likeSongElement = await likeSongElementHandle.asElement();
-      if (likeSongElement) {
-        debugLogs('Like song element', likeSongElement);
-        await likeSongElement.click();
-        break;
-      }
-      debugLogs('Like song element', likeSongElement);
-    }
-  }
+  // On calcule un ratio de la longueur de la chanson en cours
+  const progressBarRect = await progressBar.boundingBox();
+  const progressBarFrameRect = await progressBarFrame.boundingBox();
+  const current = progressBarRect.width;
+  const total = progressBarFrameRect.width;
+  const ratio = (current / total);
+
+  // On récupère la durée de la chanson en cours en ms
+  const durationRegex = /transform\s+(\d+)ms/;
+  const progressBarStyleValue = await progressBar.evaluate((node) => node.getAttribute('style'));
+  const match = durationRegex.exec(progressBarStyleValue);
+  const currentSongTotalDuration = match ? parseInt(match[1]) : null;
+
+  return { total: currentSongTotalDuration, remaining: ratio * currentSongTotalDuration };
+}
+
+export const getSongsList = async (page, shadowHost) => {
+  return await findAllElementsInShadowRoot({
+    page,
+    elementHandle: shadowHost,
+    selector: config.selectors.like,
+  });
 };
 
 export const debugLogs = (...args) => {
@@ -89,3 +99,9 @@ export const debugLogs = (...args) => {
       `\n${delimiter}${delimiter}${'-'.repeat(header.length + '[]'.length)}\n`
     );
 };
+
+export const millisToMinutesAndSeconds = (millis) => {
+  var minutes = Math.floor(millis / 60000);
+  var seconds = ((millis % 60000) / 1000).toFixed(0);
+  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}

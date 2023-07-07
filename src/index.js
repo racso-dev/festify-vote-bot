@@ -1,21 +1,40 @@
 import { loadConfig, config } from './config.js';
-import { Bot } from './bot.js';
+import { Master } from './master.js';
+import readline from 'readline';
+
+// Configure readline
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Wrap rl.question in a Promise
+const question = (query) => {
+  return new Promise((resolve) => {
+    rl.question(query, resolve);
+  });
+}
 
 loadConfig(process.argv);
 
 const main = async () => {
+  const master = new Master(config);
+  console.log('Master config', master.config);
+  await master.launch();
 
-  const bots = [];
-  console.log(`Starting bots with config:`, config);
-  for (let i = 0; i < config.votes; i++) {
-    const bot = new Bot({...config, id: i + 1});
-    await bot.init();
-    bots.push(bot);
-  }
+  // Start an infinite loop
+  while (true) {
+    // console.clear();
+    let song = await question('Quelle chanson voulez-vous liker ? ');
+    let votes = await question('Combien de votes voulez-vous générer ? ');
 
-  for (const bot of bots) {
-    console.log(`Bot ${bot.config.id} is voting for ${bot.config.song}`);
-    await bot.vote();
+    // Update config
+    master.config.song = song;
+    master.config.votes = votes;
+    await master.sync();
+
+    // Run voting
+    await master.vote();
   }
 };
 
